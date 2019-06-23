@@ -1,0 +1,74 @@
+<html lang="zh-tw">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="https://code.jquery.com/jquery-3.4.1.min.js" integrity="sha256-CSXorXvZcTkaix6Yvo6HppcZGetbYMGWSFlBw8HfCJo=" crossorigin="anonymous"></script>
+    <title>My Chatroom</title>
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+        var socket = io();
+    </script>
+</head>
+<body>
+    <button onclick="roominfo()">室長</button>
+    <div id="roominfo"></div>
+    <input type="text" name="name" id="user_name" placeholder="使用者名稱">
+    <input type="text" name="name" id="room_id" placeholder="房間ID">
+    <button onclick="login()">按此登入</button>
+    <div id="content"></div>
+    <button onclick="state_1()">狀態一</button>
+    <button onclick="state_2()">狀態二</button>
+    <button onclick="state_3()">狀態三</button>
+    <button onclick="send()">送出訂單</button>
+    <div id="state_box"></div>
+</body>
+<script>
+    var userData={'Master':false};
+    function roominfo(){//這邊是室長的部分
+        userData['name']=document.getElementById('user_name').value;
+        socket.emit('Master',userData);
+    };
+    function login(){//這邊是跟團的部分
+        userData['id']=document.getElementById('room_id').value;
+        userData['name']=document.getElementById('user_name').value;
+        socket.emit('open room',userData);
+    };
+    //一系列的送出資料，基本上都會把userData送給後端
+    function state_1(){
+        socket.emit('state_1',userData);
+    };
+    function state_2(){
+        socket.emit('state_2',userData);
+    };
+    function state_3(){
+        socket.emit('state_3',userData);
+    };
+    function send(){
+        socket.emit('send',userData);
+    };
+    //一系列的拿資料，接在前端刻好的就把append的部分改掉就好了
+    socket.on('inroom',(Data)=>{
+        console.log('inroom',Data)
+        $('#content').append(Data.name+" is in "+Data.id);
+    });
+    socket.on('state_1_res',(Data)=>{
+        $('#state_box').append(Data.name+' is fininsh state1.');
+    });
+    socket.on('state_2_res',(Data)=>{
+        $('#state_box').append(Data.name+' is fininsh state2.');
+    });
+    socket.on('state_3_res',(Data)=>{
+        $('#state_box').append(Data.name+' is fininsh state3.');
+    });
+    socket.on('id_info',(id)=>{
+        userData['id']=id;
+        userData['Master']=true;
+        $('#roominfo').append('房間ID: '+id);
+    });
+    socket.on('donotexist',()=>{
+        $('#content').append('ID 不正確或房間未成立');
+    });
+    socket.on('not ok',()=>{
+        $('#state_box').append('有人尚未完成不能送出訂單或非室長不能操作');
+    });
+</script>
